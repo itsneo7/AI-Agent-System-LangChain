@@ -18,3 +18,6 @@ lxml>=5.0.0
 
 #environment
 python-dotenv>=1.0.0
+
+#loging /debug
+rich>=13.7.0

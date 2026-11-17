@@ -12,8 +12,6 @@ load_dotenv()
 
 llm = ChatGroq(model="openai/gpt-oss-120b")
 
-
-
 #first agent
 def the_search_agent():
     return create_agent(

@@ -47,58 +47,57 @@ def scrape_url(url: str) -> str:
     Returns:
         str: The scraped content.
     """
-#This headers dictionary disguises your Python script as a normal web browser when it sends requests to a website.
-#Without custom headers, Python libraries like requests send a default label (like python-requests/2.31.0), 
-#which causes many websites to immediately block your script as an automated bot.
+    # This headers dictionary identifies the scraper when it sends requests.
+    #This headers dictionary disguises your Python script as a normal web browser when it sends requests to a website.
+    #Without custom headers, Python libraries like requests send a default label (like python-requests/2.31.0), 
+    #which causes many websites to immediately block your script as an automated bot.
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Referer": "https://www.google.com"
+        "User-Agent": "windows:langchain-url-scraper:v1.0 (by /u/YOUR_REDDIT_USERNAME)",
+        "Accept": "text/html,application/xhtml+xml"
     }
 
     try:
-        # Send a GET request to the URL
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         html_content = response.text
 
-        #step-1 trafilatura : 
+        # Try trafilatura first to extract meaningful page content.
         # it is a Python library for web scraping and text extraction. 
         # It is designed to extract meaningful content from web pages, such as articles, blog posts, and other textual information, 
         # while filtering out irrelevant elements like advertisements, navigation menus, and scripts.
-        extracted_text = trafilatura.extract(html_content, include_comments=False, include_tables=False)
+
+        extracted_text = trafilatura.extract(
+            html_content, include_comments=False, include_tables=False
+        )
         if extracted_text and len(extracted_text.strip()) > 200:
             cleaned_text = re.sub(r'\s+', ' ', extracted_text)
-            return cleaned_text[:5000]  # Return the first 5000 characters of the cleaned text
+            return cleaned_text[:5000]
 
-        #step-2 readability :
-        # it is a Python library that focuses on improving the readability of web content.
+        # Fall back to readability and BeautifulSoup.
         doc = Document(html_content)
         cleaned_text = doc.summary()
-
-        # Use BeautifulSoup to parse the HTML
         soup = BeautifulSoup(cleaned_text, 'html.parser')
 
         # Remove unwanted tags like header, footer, nav, aside, form, script, and style
         for tag in soup.find_all(['header', 'footer', 'nav', 'aside', 'form', 'script', 'style']):
             tag.decompose()
 
-        # Get text and clean it up
-        text = soup.get_text(separator=' ',strip=True)
+        text = soup.get_text(separator=' ', strip=True)
         text = re.sub(r'\s+', ' ', text)
-
         if text:
-            return text[:5000]  # Return the first 5000 characters of the cleaned text
+            return text[:5000]
         return "could not extract meaningful content from the URL."
-
+    
     except requests.exceptions.Timeout:
-        return "[red]Request timed out while trying to scrape the URL.[/red]"
+        return "[red]Request timed out.[/red]"
 
     except requests.exceptions.HTTPError as e:
-        return f"[red]HTTP error occurred while scraping URL {url}: {e}[/red]"
-
-    except Exception as e:
-        return f"[red]An unexpected error occurred while scraping URL {url}: {e}[/red]"
+        if e.response is not None and e.response.status_code == 403:
+            return "[red]403 Forbidden: The website does not allow this request.[/red]"
+        return f"[red]HTTP error: {e}[/red]"
 
     except requests.RequestException as e:
-        return f"[red]Request error occurred while scraping URL {url}: {e}[/red]"
+        return f"[red]Request error: {e}[/red]"
+
+    except Exception as e:
+        return f"[red]Unexpected error: {e}[/red]"

@@ -22,3 +22,27 @@ def the_scrape_agent():
         model=llm,
         tools=[scrape_url],
     )
+
+#An LCEL (LangChain Expression Language) chain is a declarative way to link together AI 
+# components—such as prompt templates, language models, retrievers, and output parsers—using
+# Python's pipe operator (|).
+#Instead of writing complex, imperative Python code for each step of a workflow, 
+# you stack modular building blocks sequentially:
+#chain = prompt | model | output_parser
+
+#writer chain
+writer_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", "You are a helpful assistant that writes content based on user input."),
+        ("human", """ write a  detailed research report on  the topic belo.
+    
+    Topic: {topic}
+    Research: {research}
+    
+    structure the report with an introduction, main body, and conclusion.
+    be detailed,factual, and proffesional.
+    """),
+    ]
+)
+
+writer_chain = writer_prompt | llm | StrOutputParser()

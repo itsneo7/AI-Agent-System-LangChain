@@ -46,3 +46,21 @@ writer_prompt = ChatPromptTemplate.from_messages(
 )
 
 writer_chain = writer_prompt | llm | StrOutputParser()
+
+critic_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", "You are a helpful assistant that critiques content based on user input."),
+        ("human", """ critique the research report below.
+    
+    Research Report: {report}
+
+    score the report on a scale of 1 to 10, with 10 being the highest quality.
+
+    strengths: provide constructive feedback, highlight strengths and weaknesses, and suggest improvements.
+
+    one line summary: provide a concise summary of the overall quality and effectiveness of the report.
+    """),
+    ]
+)
+
+critic_chain = critic_prompt | llm | StrOutputParser()
